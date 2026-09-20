@@ -6,8 +6,25 @@ Built as a MERN monorepo: React 18 + Vite + Tailwind on the front end, Express +
 
 ---
 
+## Live deployment
+
+| | |
+|---|---|
+| **Storefront (Vercel)** | https://nexora-ecommerce-web.vercel.app/ |
+| **Admin console** | https://nexora-ecommerce-web.vercel.app/admin |
+| **API (Render)** | https://nexora-ecommerce-website.onrender.com |
+| **API health check** | https://nexora-ecommerce-website.onrender.com/api/v1/health |
+| **GitHub repository** | https://github.com/monu655/nexora-ecommerce-website |
+
+Demo login: `riya.mehta@example.com` / `Customer@2025` · Admin login: `admin@nexora.store` / `Nexora@2025`
+
+> The API runs on Render's free tier, which sleeps after 15 minutes of inactivity — the first request after a while can take 20–30 seconds to respond while it wakes up.
+
+---
+
 ## Contents
 
+- [Live deployment](#live-deployment)
 - [Business use case](#business-use-case)
 - [Features](#features)
 - [Tech stack](#tech-stack)
