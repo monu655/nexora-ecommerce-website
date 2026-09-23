@@ -1,3 +1,4 @@
+import { memo, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Heart, ShoppingBag } from 'lucide-react';
 import { ProductVisual } from './ProductVisual';
@@ -7,11 +8,28 @@ import { Button } from '@/components/ui/Button';
 import { formatCurrency } from '@/lib/format';
 import { cn } from '@/lib/cn';
 
-export function ProductCard({ product, onAddToCart, onToggleWishlist, wishlisted }) {
-  const outOfStock = product.stock <= 0;
-  const lowStock = !outOfStock && product.stock <= (product.lowStockThreshold ?? 10);
-  const discount = product.compareAtPrice > product.price
-    ? Math.round(((product.compareAtPrice - product.price) / product.compareAtPrice) * 100) : 0;
+function ProductCardBase({ product, onAddToCart, onToggleWishlist, wishlisted }) {
+  const stock = product.stock ?? 0;
+  const outOfStock = stock <= 0;
+  const lowStock = !outOfStock && stock <= (product.lowStockThreshold ?? 10);
+
+  const discount = useMemo(() => {
+    return product.compareAtPrice > product.price
+      ? Math.round(((product.compareAtPrice - product.price) / product.compareAtPrice) * 100)
+      : 0;
+  }, [product.compareAtPrice, product.price]);
+
+  const handleWishlistClick = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onToggleWishlist?.(product);
+  }, [onToggleWishlist, product]);
+
+  const handleAddToCart = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onAddToCart?.(product);
+  }, [onAddToCart, product]);
 
   return (
     <article className="group card flex flex-col overflow-hidden transition-shadow hover:shadow-lift">
@@ -22,10 +40,11 @@ export function ProductCard({ product, onAddToCart, onToggleWishlist, wishlisted
         <div className="absolute left-3 top-3 flex gap-1.5">
           {discount > 0 && <Badge tone="brand">{discount}% off</Badge>}
           {outOfStock && <Badge tone="neutral">Out of stock</Badge>}
-          {lowStock && <Badge tone="caution">Only {product.stock} left</Badge>}
+          {lowStock && <Badge tone="caution">Only {stock} left</Badge>}
         </div>
         <button
-          onClick={() => onToggleWishlist?.(product)}
+          type="button"
+          onClick={handleWishlistClick}
           aria-label={wishlisted ? 'Remove from wishlist' : 'Save to wishlist'}
           aria-pressed={wishlisted}
           className="absolute right-3 top-3 rounded-full bg-white/90 p-2 text-ink-soft shadow-card backdrop-blur transition-colors hover:text-critical-500"
@@ -50,8 +69,13 @@ export function ProductCard({ product, onAddToCart, onToggleWishlist, wishlisted
               <p className="tnum text-[13px] text-ink-muted line-through">{formatCurrency(product.compareAtPrice)}</p>
             )}
           </div>
-          <Button size="sm" variant={outOfStock ? 'secondary' : 'primary'} disabled={outOfStock}
-            onClick={() => onAddToCart?.(product)}>
+          <Button
+            type="button"
+            size="sm"
+            variant={outOfStock ? 'secondary' : 'primary'}
+            disabled={outOfStock}
+            onClick={handleAddToCart}
+          >
             <ShoppingBag className="h-4 w-4" />
             {outOfStock ? 'Sold out' : 'Add'}
           </Button>
@@ -60,3 +84,5 @@ export function ProductCard({ product, onAddToCart, onToggleWishlist, wishlisted
     </article>
   );
 }
+
+export const ProductCard = memo(ProductCardBase);

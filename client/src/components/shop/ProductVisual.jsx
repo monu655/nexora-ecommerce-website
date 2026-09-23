@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 /**
  * Catalogue photography is not part of this build, so each product renders a
@@ -24,7 +24,7 @@ const GLYPHS = {
     <g fill="none" stroke={c} strokeWidth="5">
       <rect x="30" y="66" width="132" height="62" rx="10" />
       <g fill={c} stroke="none">
-        {[0, 1, 2].map((r) => [0, 1, 2, 3, 4, 5].map((k) => (
+        {[0, 1, 2].flatMap((r) => [0, 1, 2, 3, 4, 5].map((k) => (
           <rect key={`${r}-${k}`} x={42 + k * 19} y={78 + r * 15} width="13" height="10" rx="2.5" opacity={0.85} />
         )))}
       </g>
@@ -62,7 +62,10 @@ function optimizedUrl(url, width) {
   try {
     const u = new URL(url);
     const resizableHosts = ['images.unsplash.com', 'res.cloudinary.com'];
-    if (!resizableHosts.some((h) => u.hostname.includes(h))) return url;
+    const isResizable = resizableHosts.some(
+      (h) => u.hostname === h || u.hostname.endsWith(`.${h}`)
+    );
+    if (!isResizable) return url;
     u.searchParams.set('w', String(width));
     u.searchParams.set('q', '65');
     u.searchParams.set('auto', 'format');
@@ -82,12 +85,28 @@ export function ProductVisual({ product, className = '', ratio = 'aspect-[4/3]',
   const [photoLoaded, setPhotoLoaded] = useState(false);
   const [photoFailed, setPhotoFailed] = useState(false);
 
+  // Reset load/error state whenever the photo actually changes — otherwise a
+  // reused instance (e.g. in a virtualised or re-sorted list) can carry over
+  // stale state from the previous product's image.
+  useEffect(() => {
+    setPhotoLoaded(false);
+    setPhotoFailed(false);
+  }, [photo]);
+
   // The generated visual is always painted first and the photograph fades in
   // over it once decoded. A slow, blocked or missing image therefore leaves a
   // finished-looking tile rather than an empty box waiting on an error event.
+  const hasPhoto = Boolean(photo) && !photoFailed;
+
   return (
     <div className={`${ratio} ${className} relative overflow-hidden bg-surface-sunken`} style={{ backgroundColor: tint }}>
-      <svg viewBox="0 0 192 192" className="h-full w-full" role="img" aria-label={product?.name}>
+      <svg
+        viewBox="0 0 192 192"
+        className="h-full w-full"
+        role={hasPhoto ? undefined : 'img'}
+        aria-hidden={hasPhoto ? 'true' : undefined}
+        aria-label={hasPhoto ? undefined : product?.name}
+      >
         <circle cx="96" cy="96" r="70" fill="#fff" opacity="0.75" />
         {glyph}
       </svg>
@@ -95,7 +114,7 @@ export function ProductVisual({ product, className = '', ratio = 'aspect-[4/3]',
         {product?.sku}
       </span>
 
-      {photo && !photoFailed && (
+      {hasPhoto && (
         <img
           src={photo}
           alt={product?.name || ''}

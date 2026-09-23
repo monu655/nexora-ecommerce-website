@@ -26,6 +26,7 @@ export default function ProductDetail() {
   const [quantity, setQuantity] = useState(1);
   const [tab, setTab] = useState('overview');
   const [buying, setBuying] = useState(false);
+  const [adding, setAdding] = useState(false);
 
   // When the user opens another product (e.g. from "More in ..."), start fresh at the top.
   useEffect(() => {
@@ -67,6 +68,19 @@ export default function ProductDetail() {
   }
 
   const outOfStock = product.stock <= 0;
+
+  const addToCart = async () => {
+    if (outOfStock || adding) return;
+    setAdding(true);
+    try {
+      await addItem(product, quantity);
+      toast.success('Added to cart');
+    } catch (e) {
+      toast.error(e?.message || 'Could not add to cart');
+    } finally {
+      setAdding(false);
+    }
+  };
 
   const buyNow = async () => {
     if (outOfStock || buying) return;
@@ -132,11 +146,27 @@ export default function ProductDetail() {
 
           <div className="mt-7 flex flex-wrap items-center gap-3">
             <div className="flex h-11 items-center rounded-lg border border-line-strong">
-              <button onClick={() => setQuantity((q) => Math.max(1, q - 1))} className="h-full w-11 text-[18px] text-ink-soft hover:bg-surface-sunken" aria-label="Decrease quantity">−</button>
+              <button
+                type="button"
+                disabled={outOfStock}
+                onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                className="h-full w-11 text-[18px] text-ink-soft hover:bg-surface-sunken disabled:cursor-not-allowed disabled:opacity-40"
+                aria-label="Decrease quantity"
+              >
+                −
+              </button>
               <span className="tnum w-10 text-center text-[15px] font-medium">{quantity}</span>
-              <button onClick={() => setQuantity((q) => Math.min(10, product.stock, q + 1))} className="h-full w-11 text-[18px] text-ink-soft hover:bg-surface-sunken" aria-label="Increase quantity">+</button>
+              <button
+                type="button"
+                disabled={outOfStock}
+                onClick={() => setQuantity((q) => Math.min(10, product.stock, q + 1))}
+                className="h-full w-11 text-[18px] text-ink-soft hover:bg-surface-sunken disabled:cursor-not-allowed disabled:opacity-40"
+                aria-label="Increase quantity"
+              >
+                +
+              </button>
             </div>
-            <Button size="lg" disabled={outOfStock} onClick={() => addItem(product, quantity)} className="flex-1 sm:flex-none">
+            <Button size="lg" disabled={outOfStock} loading={adding} onClick={addToCart} className="flex-1 sm:flex-none">
               <ShoppingBag className="h-4 w-4" /> {outOfStock ? 'Out of stock' : 'Add to cart'}
             </Button>
             <Button size="lg" variant="secondary" disabled={outOfStock} loading={buying} onClick={buyNow} className="flex-1 sm:flex-none">
@@ -159,9 +189,13 @@ export default function ProductDetail() {
       <section id="reviews" className="mt-14">
         <div className="flex gap-1 border-b border-line">
           {[['overview', 'Overview'], ['specs', 'Specifications'], ['reviews', `Reviews (${product.reviewCount})`]].map(([id, label]) => (
-            <button key={id} onClick={() => setTab(id)}
+            <button
+              key={id}
+              type="button"
+              onClick={() => setTab(id)}
               className={`-mb-px border-b-2 px-4 py-3 text-[14px] font-medium transition-colors ${
-                tab === id ? 'border-ink text-ink' : 'border-transparent text-ink-muted hover:text-ink-soft'}`}>
+                tab === id ? 'border-ink text-ink' : 'border-transparent text-ink-muted hover:text-ink-soft'}`}
+            >
               {label}
             </button>
           ))}
@@ -192,7 +226,7 @@ export default function ProductDetail() {
             </dl>
           )}
 
-          {tab === 'reviews' && <ReviewsPanel product={product} reviews={reviews} authenticated={authenticated} />}
+          {tab === 'reviews' && <ReviewsPanel key={product._id} product={product} reviews={reviews} authenticated={authenticated} />}
         </div>
       </section>
 
@@ -229,7 +263,10 @@ function ReviewsPanel({ product, reviews, authenticated }) {
 
   const submit = (e) => {
     e.preventDefault();
-    if (form.body.trim().length < 10) return setErrors({ body: 'Tell us a little more — at least 10 characters.' });
+    if (form.body.trim().length < 10) {
+      setErrors({ body: 'Tell us a little more — at least 10 characters.' });
+      return;
+    }
     setErrors({});
     mutation.mutate();
   };
