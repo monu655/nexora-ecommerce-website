@@ -92,12 +92,12 @@ export default function ProductDetail() {
       <div className="grid gap-10 lg:grid-cols-2">
         <div>
           <div className="overflow-hidden rounded-2xl border border-line">
-            <ProductVisual product={product} ratio="aspect-square" />
+            <ProductVisual product={product} ratio="aspect-square" size={800} priority />
           </div>
           <div className="mt-3 grid grid-cols-4 gap-3">
             {[0, 1, 2, 3].map((i) => (
               <div key={i} className="overflow-hidden rounded-lg border border-line opacity-70">
-                <ProductVisual product={product} ratio="aspect-square" />
+                <ProductVisual product={product} ratio="aspect-square" size={150} />
               </div>
             ))}
           </div>

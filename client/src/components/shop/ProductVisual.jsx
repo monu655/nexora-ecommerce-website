@@ -53,11 +53,32 @@ const GLYPHS = {
   ),
 };
 
-export function ProductVisual({ product, className = '', ratio = 'aspect-[4/3]' }) {
+// Unsplash (and similar CDNs) can resize on the fly via query params.
+// We rewrite the stored URL so a small grid thumbnail actually downloads a
+// small image, instead of the same 900px file everywhere. Local files
+// (no matching host) are returned untouched.
+function optimizedUrl(url, width) {
+  if (!url) return url;
+  try {
+    const u = new URL(url);
+    const resizableHosts = ['images.unsplash.com', 'res.cloudinary.com'];
+    if (!resizableHosts.some((h) => u.hostname.includes(h))) return url;
+    u.searchParams.set('w', String(width));
+    u.searchParams.set('q', '65');
+    u.searchParams.set('auto', 'format');
+    u.searchParams.set('fit', 'crop');
+    return u.toString();
+  } catch {
+    return url;
+  }
+}
+
+export function ProductVisual({ product, className = '', ratio = 'aspect-[4/3]', size = 480, priority = false }) {
   const color = product?.colorway || '#1B39C9';
   const glyph = useMemo(() => (GLYPHS[product?.category] || GLYPHS.Audio)(color), [product?.category, color]);
   const tint = `${color}0F`;
-  const photo = product?.images?.[0] || product?.image;
+  const rawPhoto = product?.images?.[0] || product?.image;
+  const photo = useMemo(() => optimizedUrl(rawPhoto, size), [rawPhoto, size]);
   const [photoLoaded, setPhotoLoaded] = useState(false);
   const [photoFailed, setPhotoFailed] = useState(false);
 
@@ -78,8 +99,9 @@ export function ProductVisual({ product, className = '', ratio = 'aspect-[4/3]' 
         <img
           src={photo}
           alt={product?.name || ''}
-          loading="lazy"
+          loading={priority ? 'eager' : 'lazy'}
           decoding="async"
+          fetchPriority={priority ? 'high' : 'auto'}
           onLoad={() => setPhotoLoaded(true)}
           onError={() => setPhotoFailed(true)}
           className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-300 ${

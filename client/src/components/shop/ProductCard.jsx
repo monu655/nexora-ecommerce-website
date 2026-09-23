@@ -17,7 +17,7 @@ export function ProductCard({ product, onAddToCart, onToggleWishlist, wishlisted
     <article className="group card flex flex-col overflow-hidden transition-shadow hover:shadow-lift">
       <div className="relative">
         <Link to={`/products/${product.slug}`} aria-label={product.name}>
-          <ProductVisual product={product} />
+          <ProductVisual product={product} size={400} />
         </Link>
         <div className="absolute left-3 top-3 flex gap-1.5">
           {discount > 0 && <Badge tone="brand">{discount}% off</Badge>}
