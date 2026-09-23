@@ -93,14 +93,12 @@ export function ProductVisual({ product, className = '', ratio = 'aspect-[4/3]',
     setPhotoFailed(false);
   }, [photo]);
 
-  // The generated visual is normally painted first and the photograph fades in
-  // over it once decoded — that keeps small grid thumbnails from ever showing a
-  // blank/broken box while scrolling. For a priority (hero) image the glyph
-  // flash is much more visible and reads as "wrong image, then right image", so
-  // there we skip the glyph entirely while loading and show only a plain tint;
-  // the glyph still appears as a genuine fallback if the photo fails to load.
+  // The glyph is a true fallback only: it renders when there's no photo URL at
+  // all, or the photo failed to load. Whenever a real photo exists and hasn't
+  // failed, we show only the plain tint while it loads and then the photo —
+  // never the glyph followed by the photo.
   const hasPhoto = Boolean(photo) && !photoFailed;
-  const showGlyph = !hasPhoto || (!priority && !photoLoaded) || photoFailed;
+  const showGlyph = !hasPhoto;
 
   return (
     <div className={`${ratio} ${className} relative overflow-hidden bg-surface-sunken`} style={{ backgroundColor: tint }}>
