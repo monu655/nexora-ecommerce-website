@@ -93,23 +93,29 @@ export function ProductVisual({ product, className = '', ratio = 'aspect-[4/3]',
     setPhotoFailed(false);
   }, [photo]);
 
-  // The generated visual is always painted first and the photograph fades in
-  // over it once decoded. A slow, blocked or missing image therefore leaves a
-  // finished-looking tile rather than an empty box waiting on an error event.
+  // The generated visual is normally painted first and the photograph fades in
+  // over it once decoded — that keeps small grid thumbnails from ever showing a
+  // blank/broken box while scrolling. For a priority (hero) image the glyph
+  // flash is much more visible and reads as "wrong image, then right image", so
+  // there we skip the glyph entirely while loading and show only a plain tint;
+  // the glyph still appears as a genuine fallback if the photo fails to load.
   const hasPhoto = Boolean(photo) && !photoFailed;
+  const showGlyph = !hasPhoto || (!priority && !photoLoaded) || photoFailed;
 
   return (
     <div className={`${ratio} ${className} relative overflow-hidden bg-surface-sunken`} style={{ backgroundColor: tint }}>
-      <svg
-        viewBox="0 0 192 192"
-        className="h-full w-full"
-        role={hasPhoto ? undefined : 'img'}
-        aria-hidden={hasPhoto ? 'true' : undefined}
-        aria-label={hasPhoto ? undefined : product?.name}
-      >
-        <circle cx="96" cy="96" r="70" fill="#fff" opacity="0.75" />
-        {glyph}
-      </svg>
+      {showGlyph && (
+        <svg
+          viewBox="0 0 192 192"
+          className="h-full w-full"
+          role={hasPhoto ? undefined : 'img'}
+          aria-hidden={hasPhoto ? 'true' : undefined}
+          aria-label={hasPhoto ? undefined : product?.name}
+        >
+          <circle cx="96" cy="96" r="70" fill="#fff" opacity="0.75" />
+          {glyph}
+        </svg>
+      )}
       <span className="absolute bottom-2.5 left-3 text-[10px] font-semibold tracking-wide text-ink-muted/70">
         {product?.sku}
       </span>
